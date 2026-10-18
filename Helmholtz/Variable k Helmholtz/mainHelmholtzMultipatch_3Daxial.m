@@ -101,6 +101,63 @@ title ('Valor absoluto de la solucion de Helmholtz sobre el eje z')
 
 %saveas(gcf,'multi.fig')
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Calculo del punto focal por la heuristica del ultimo maximo local
+Z = [Zp1', Zp2'];
+up = [abs(up1), abs(up2)];
+
+ind = ultimo_maximo_local(up);
+last_max = [Z(ind) up(ind)];
+
+figure(600), hold on
+plot(last_max(1),last_max(2),'ko','MarkerSize',10),hold on
+
+fprintf('Ultimo maximo local: (%e,  %e)\n',last_max(1), last_max(2))
+fprintf('Indice: %e\n',ind)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Perfil de la solucion sobre la linea horizontal z = z_f (altura del foco)
+% Se calculan las preimagenes de una muestra densa de puntos de esa linea
+% en cada parche (dominio parametrico) y se evalua la solucion sobre ellas.
+z_f = Z(ind);
+fprintf('Altura del foco z_f = %e\n', z_f)
+
+npoints_f = 1000;
+preim = preimagen_linea_focal(geometry, z_f, npoints_f);
+
+figure(700),grid on, hold on
+figure(800),grid on, hold on
+figure(900),grid on, hold on
+
+for iptc = 1:numel(geometry)
+    if preim(iptc).n == 0
+        continue
+    end
+    % sp_eval trabaja con rejillas tensoriales, asi que sobre la curva
+    % preimagen (xi(t), eta(t)) se evalua punto a punto
+    upf = zeros(1, preim(iptc).n);
+    for k = 1:preim(iptc).n
+        upk = sp_eval (u(space.gnum{iptc}), space.sp_patch{iptc}, ...
+                       geometry(iptc), {preim(iptc).xi(k), preim(iptc).eta(k)});
+        upf(k) = upk;
+    end
+    rhof = preim(iptc).rho';   % coordenada x (rho) de los puntos de la linea
+
+    figure(700)
+    plot(rhof,real(upf),'LineWidth',2,'MarkerSize',6),grid on
+    figure(800)
+    plot(rhof,imag(upf),'LineWidth',2,'MarkerSize',6),grid on
+    figure(900)
+    plot(rhof,abs(upf),'LineWidth',2,'MarkerSize',6),grid on
+end
+
+figure(700)
+xlabel('x'), title ('Parte Real de la solucion de Helmholtz sobre la linea z = z_f (altura del foco)')
+figure(800)
+xlabel('x'), title ('Parte imaginaria de la solucion de Helmholtz sobre la linea z = z_f (altura del foco)')
+figure(900)
+xlabel('x'), title ('Valor absoluto de la solucion de Helmholtz sobre la linea z = z_f (altura del foco)')
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Rotacion
 npoints=100;
