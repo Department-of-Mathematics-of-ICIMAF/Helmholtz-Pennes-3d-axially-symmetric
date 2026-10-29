@@ -1,4 +1,7 @@
-function[geometry,boundaries,interfaces,boundary_interfaces]=ParametMultipatch_mediodominio(r,a,rl,alpha,Q,zc)
+function[geometry,boundaries,interfaces,boundary_interfaces]=ParametMultipatch_mediodominio(r,a,rl,alpha,Q,zc,output_dir)
+if nargin < 7 || isempty(output_dir)
+    output_dir = pwd;
+end
  % VHM, marzo 2026
 % Esta funcion construye una parametrizacion F(xi,eta) del dominio del problema 
 % 3D con lente CURVA cuando se utiliza la simetria axial. Este dominio es 2D y esta 
@@ -27,7 +30,7 @@ arc_right = nrbcirc(r,[0 0],0,alpha);
 
 arc_bottom = nrbcirc(rl,[0 zc],3*pi/2,3*pi/2+atan(a/zc));
 
-figure(10)
+figure(10), clf
  nrbctrlplot(line_right1), hold on
  nrbctrlplot(line_right2), hold on
  nrbctrlplot(line_right3), hold on
@@ -52,7 +55,7 @@ curve_bb = arc_bottom;
 %Patch
 Fmap_b = nrbcoons(curve_bb,curve_bt,curve_bl,curve_br);
 %geometry_b = geo_load (Fmap_b);
-figure(2), hold on
+figure(2), clf, hold on
 nrbctrlplot(Fmap_b)
 % Calculos para graficar el Jacobiano del mapeo
 [ders, ders2] = nrbderiv (Fmap_b);
@@ -76,7 +79,7 @@ X=reshape(F(1,:),npts,npts);
 Y=reshape(F(2,:),npts,npts);
 %figure(115), hold on, plot(X,Y,'m.-',X',Y','m.-')
 
-figure(5),hold on, grid on, view(2)
+figure(5),clf, hold on, grid on, view(2)
 colorbar
 surf (X, Y, ZJr,'EdgeColor','none','Facecolor','interp'), axis tight, axis equal
 title('Mean ratio Jacobian')
@@ -175,4 +178,6 @@ Fmap = [Fmap_b, Fmap_t, Fmap_r];
 %geometry = [geometry_b, geometry_t, geometry_r];
 [geometry, boundaries,interfaces,~,boundary_interfaces]= mp_geo_load(Fmap);
 
-fprintf('Aqui')
+save_figure(10, output_dir, 'domain_control_curves');
+save_figure(2, output_dir, 'patch_control_points');
+save_figure(5, output_dir, 'mean_ratio_jacobian');
