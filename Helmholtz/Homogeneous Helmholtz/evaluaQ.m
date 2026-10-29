@@ -1,4 +1,4 @@
-function[XYQ]=evaluaQ(u,space,geometry,c_const,alpha_const,rho_const)
+function XYQ = evaluaQ(u, space, geometry, c_const, alpha_const, rho_const, output_dir, npoints)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % evaluaQ.m  -  Caso k CONSTANTE (Homogeneous Helmholtz)
 % VHM octubre 2026
@@ -51,11 +51,16 @@ fprintf('--------------------------------------------------------------\n')
 fprintf(' Calculos para graficar Q ...\n')
 
 % Numero de puntos por direccion parametrica para la malla de evaluacion
-npoints = 250;
+if nargin < 7 || isempty(output_dir)
+    output_dir = pwd;
+end
+if nargin < 8 || isempty(npoints)
+    npoints = 250;
+end
 pts = {linspace(0, 1, npoints), linspace(0, 1, npoints)};
 
 % Evaluamos la funcion Q para graficarla parche por parche
-figure(351), hold on, grid on
+fig351 = figure(351); clf(fig351); hold on, grid on
 axis([-0.15 0.15 -0.02 0.15])
 colorbar
 axis tight, axis equal
@@ -89,4 +94,5 @@ for iptc = 1:space.npatch
     XYQnew = [Xval(:), Yval(:), Qval(:)];
     XYQ    = [XYQ; XYQnew];
 end
+save_figure(fig351, output_dir, 'Q_distribution');
 end
