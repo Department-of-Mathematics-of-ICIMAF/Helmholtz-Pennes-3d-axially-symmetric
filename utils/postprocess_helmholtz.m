@@ -120,7 +120,7 @@ xlabel(ax, 'X'); ylabel(ax, 'Y'); zlabel(ax, 'Z');
 title(ax, 'abs(u_h)');
 hold(ax, 'on');
 
-c crear_solido_revolucion2(ax, Rhop1, Zp1, sol1, params.ang, global_clim);
+crear_solido_revolucion2(ax, Rhop1, Zp1, sol1, params.ang, global_clim);
 crear_solido_revolucion2(ax, Rhop2, Zp2, sol2, params.ang, global_clim);
 crear_solido_revolucion2(ax, Rhop3, Zp3, sol3, params.ang, global_clim);
 camlight(ax, 'left');
