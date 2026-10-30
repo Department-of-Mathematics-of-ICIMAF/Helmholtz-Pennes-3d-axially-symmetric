@@ -3,7 +3,7 @@ function results = run_helmholtz_cases(model_type, input_file)
     root_dir = get_project_root();
     utils_dir = fullfile(root_dir, 'utils');
     original_path = path;
-    restore_path = onCleanup(@() path(original_path)); %#ok<NASGU>
+    restore_path = onCleanup(@() path(original_path));
     addpath(utils_dir);
 
     switch model_type
