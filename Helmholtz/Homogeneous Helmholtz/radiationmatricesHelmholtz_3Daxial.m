@@ -1,4 +1,10 @@
-function[u]=radiationmatricesHelmholtz_3Daxial(geometry,space,msh,kval,C,r,alpha,c_const,alpha_const,rho_const)
+function [u, XYQ] = radiationmatricesHelmholtz_3Daxial(geometry, space, msh, kval, C, r, alpha, c_const, alpha_const, rho_const, output_dir, q_npoints)
+if nargin < 11 || isempty(output_dir)
+    output_dir = pwd;
+end
+if nargin < 12 || isempty(q_npoints)
+    q_npoints = 250;
+end
 % Esta funcion calcula las matrices de masa y rigidez para el problema de 
 % Helmholtz en un dominio 3D con simetria axial. Ademas calcula la matriz
 % A y el lado derecho b del sistema lineal, cuya solucion son los
@@ -42,6 +48,7 @@ function[u]=radiationmatricesHelmholtz_3Daxial(geometry,space,msh,kval,C,r,alpha
 % fprintf('long arco aprox. frontera 4=%e\n',sum(v4))   
 % fprintf('----------------------------------------------------\n')
 % v5= op_f_v_tp (space.sp_patch{3}.boundary(2), msh.msh_patch{3}.boundary(2),gfun);
+%                                                  
 % fprintf('long arco exacta frontera 5=%e\n',r*alpha)                                                    
 % fprintf('long arco aprox. frontera 5=%e\n',sum(v5))
 
@@ -132,14 +139,10 @@ fprintf('-----------------------------------------------------------------\n')
 % calculo de Q (la funcion u ya esta calculada y se devuelve normalmente).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin >= 8 && ~isempty(c_const) && ~isempty(alpha_const) && ~isempty(rho_const)
-    [XYQ] = evaluaQ(u, space, geometry, c_const, alpha_const, rho_const);
-    filename = input('diga el nombre del fichero de valores de Q\n', 's');
-    if ~isempty(filename)
-        save(filename, 'XYQ');
-    end
+    XYQ = evaluaQ(u, space, geometry, c_const, alpha_const, rho_const, ...
+                  output_dir, q_npoints);
+    save(fullfile(output_dir, 'Q_values.mat'), 'XYQ');
 else
+    XYQ = [];
     fprintf('No se calcularon valores de Q: faltan c_const, alpha_const o rho_const.\n');
-    fprintf('Para activar el calculo de Q, llame a radiationmatricesHelmholtz_3Daxial\n');
-    fprintf('con los tres argumentos adicionales (c_const, alpha_const, rho_const).\n');
 end
-%fprintf('Aqui')

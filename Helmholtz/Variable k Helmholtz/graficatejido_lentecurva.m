@@ -1,4 +1,7 @@
-function[]=graficatejido(r,y1,y2,n,m,fr,zmin,rl)
+function [] = graficatejido_lentecurva(r, y1, y2, n, m, fr, zmin, rl, output_dir)
+if nargin < 9 || isempty(output_dir)
+    output_dir = pwd;
+end
 cp=1558; % velocidad propagacion de la onda en piel
 cg=1478; %  "                          "    en grasa
 cm=1547; %  "                          "    en musculo
@@ -56,17 +59,21 @@ for ii=1:npt1
        end
     end
 end
-figure(23), hold on 
+fig23 = figure(23); clf(fig23); hold on 
 %mesh(MFX,MFY,C,COLOR)
 surf(MFX,MFY,C,COLOR,'Facecolor','interp','EdgeColor','none','FaceAlpha',0.5);
 ax=gca;
 ax.FontSize=16;
+
 ax.XLim = [0 0.1400];
 view(2)
 
-figure(25), grid on, hold on 
+fig25 = figure(25); clf(fig25); grid on, hold on 
 surf(MFX,MFY,abs(K),COLOR,'Facecolor','interp','EdgeColor','none','FaceAlpha',0.5);
 ax=gca;
 ax.XLim = [0 0.1400];
 ax.FontSize=16;
 
+save_figure(fig23, output_dir, 'tissue_speed');
+save_figure(fig25, output_dir, 'tissue_wave_number');
+end

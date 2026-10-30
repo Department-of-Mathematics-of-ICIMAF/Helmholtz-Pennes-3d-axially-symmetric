@@ -1,4 +1,10 @@
-function[u]=radiationmatricesHelmholtz_3Daxial(geometry,space,msh,C,r,alpha, KfunR, Kfun2,ccoef,alphacoef,rhocoef,knots)
+function [u, XYQ] = radiationmatricesHelmholtz_3Daxial(geometry, space, msh, C, r, alpha, KfunR, Kfun2, ccoef, alphacoef, rhocoef, knots, output_dir, q_npoints)
+if nargin < 13 || isempty(output_dir)
+    output_dir = pwd;
+end
+if nargin < 14 || isempty(q_npoints)
+    q_npoints = 250;
+end
 % Esta funcion calcula las matrices de masa y rigidez para el problema de 
 % Helmholtz en un dominio 3D con simetria axial. Ademas calcula la matriz
 % A y el lado derecho b del sistema lineal, cuya solucion son los
@@ -31,6 +37,7 @@ function[u]=radiationmatricesHelmholtz_3Daxial(geometry,space,msh,C,r,alpha, Kfu
 % fprintf('long arco aprox. frontera 4=%e\n',sum(v4))   
 % fprintf('----------------------------------------------------\n')
 % v5= op_f_v_tp (space.sp_patch{3}.boundary(2), msh.msh_patch{3}.boundary(2),gfun);
+%                                                  
 % fprintf('long arco exacta frontera 5=%e\n',r*alpha)                                                    
 % fprintf('long arco aprox. frontera 5=%e\n',sum(v5))
 
@@ -112,8 +119,9 @@ fprintf('Resolviendo el sistema de ecuaciones lineales\n')
 u(int_dofs) = mat(int_dofs, int_dofs) \ rhs(int_dofs);
 fprintf('-----------------------------------------------------------------\n')
 
-[XYQ]=evaluaQ(knots,ccoef,alphacoef,rhocoef,u,space,geometry);
-filename=input('diga el nombre del fichero de valores de Q\n','s');
+XYQ = evaluaQ(knots, ccoef, alphacoef, rhocoef, u, space, geometry, ...
+              output_dir, q_npoints);
+save(fullfile(output_dir, 'Q_values.mat'), 'XYQ');
 
-save(filename,'XYQ')
-%fprintf('Aqui')
+% Q queda guardado automaticamente en la carpeta de esta corrida.
+

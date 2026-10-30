@@ -1,4 +1,4 @@
-function[ccoef,alphacoef,rhocoef,knots]=ConstruyeksmoothShoenberg_lentecurva(n,k,y1,y2,y3,ymin,r)
+function[ccoef,alphacoef,rhocoef,knots]=ConstruyeksmoothShoenberg_lentecurva(n,k,y1,y2,y3,ymin,r,c_water)
 
 % Por definicion
 % k(x,y)=2*pi*fr/c(x,y)-1i*alpha(x,y)
@@ -34,6 +34,10 @@ function[ccoef,alphacoef,rhocoef,knots]=ConstruyeksmoothShoenberg_lentecurva(n,k
 % knots- nodos de los splines Vc y Valpha
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+if nargin < 8 || isempty(c_water)
+    c_water = 1500;
+end
 
 % Calculo del aproximante Vc
 gfun=@(y)speed(y,r,ymin);
@@ -93,7 +97,7 @@ ny=length(y);
 cy=zeros(ny,1);
  for i=1:ny
     if ymin <= y(i) && y(i) < 0
-          cy(i)=1500; % water
+          cy(i)=c_water; % water
        elseif 0 <= y(i) && y(i) <= y1 
           cy(i)=1558; % skin
        elseif y1 < y(i) && y(i) <= y2 
@@ -147,7 +151,7 @@ rho=zeros(ny,1);
  for i=1:ny
     if ymin <= y(i) && y(i) < 0
         rho(i)=1000; %water
-       elseif 0 <= y(i) &&  y(i) <= y1 
+       elseif 0 <= y(i) && y(i) <= y1 
           rho(i)=1200; %skin
        elseif y1 < y(i) && y(i) <= y2 
          rho(i)=950; %fat

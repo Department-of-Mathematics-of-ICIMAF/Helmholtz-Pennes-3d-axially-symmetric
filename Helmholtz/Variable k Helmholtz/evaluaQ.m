@@ -1,4 +1,4 @@
-function[XYQ]=evaluaQ(knots,ccoef,alphacoef,rhocoef,u,space,geometry)
+function XYQ = evaluaQ(knots, ccoef, alphacoef, rhocoef, u, space, geometry, output_dir, npoints)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Q se calcula a partir de la solucion 
 % u de la ec de Helmholtz como
@@ -12,11 +12,16 @@ fprintf('--------------------------------------------------------------\n')
 fprintf(' Calculos para graficar Q ...\n')
 
 
-npoints=250;
+if nargin < 8 || isempty(output_dir)
+    output_dir = pwd;
+end
+if nargin < 9 || isempty(npoints)
+    npoints = 250;
+end
 pts = {linspace(0, 1, npoints), linspace(0, 1, npoints)};
 
 % Evaluamos la funcion Q para graficarla parche por parche
-figure(351), hold on, grid on
+fig351 = figure(351); clf(fig351); hold on, grid on
 axis([-0.15 0.15 -0.02 0.15])
 colorbar
 axis tight, axis equal
@@ -37,4 +42,6 @@ for iptc = 1:space.npatch
     surf (Xval, Yval,Qval,'EdgeColor','none') 
     XYQnew=[Xval(:),Yval(:),Qval(:)];
     XYQ=[XYQ;XYQnew];
+end
+save_figure(fig351, output_dir, 'Q_distribution');
 end

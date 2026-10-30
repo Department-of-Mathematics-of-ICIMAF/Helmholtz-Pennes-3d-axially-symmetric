@@ -1,4 +1,4 @@
-function[kxy]=kfuntramos(x,y,r,fr)
+function kxy = kfuntramos(x, y, r, fr, y1, y2, y3)
 % Esta funcion evalua en un punto (x,y) la funcion k(x,y) que aparece en 
 % la ecuacion de Helmholtz para el problema de radiacion en un dominio
 % semicircular de radio r. 
@@ -16,9 +16,11 @@ function[kxy]=kfuntramos(x,y,r,fr)
 % Se supone que el punto (x,y) donde vamos a evaluar esta en el interior
 % del semicirculo con centro en el origen y radio r
 
-y1=0.010;
-y2=0.032;
-y3=0.0675;
+if nargin < 7
+    y1 = 0.010;
+    y2 = 0.032;
+    y3 = 0.0675;
+end
 cte=2*pi*fr;
 [n,m]=size(x);
 kxy=zeros(n,m);
@@ -47,4 +49,3 @@ for i=1:n
 %      kxy(i,j)=cte/cxy;
    end
 end
-

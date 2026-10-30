@@ -1,0 +1,21 @@
+[
+  {
+    "name": "phantom_base",
+    "tissue": "phantom",
+    "r": 0.133,
+    "a": 0.01,
+    "fr": 1000000,
+    "zc": 0.0665,
+    "C": 400000,
+    "alpha": 0.7698,
+    "Q": [0.0217, 0.0385],
+    "n1": 100,
+    "m1": 300,
+    "n3": 400,
+    "npoints_axis": 1000,
+    "npoints_focal": 1000,
+    "npoints_surface": 100,
+    "ang": 4.71238898038469,
+    "q_npoints": 250
+  }
+]
