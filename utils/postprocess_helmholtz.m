@@ -123,7 +123,9 @@ hold(ax, 'on');
 crear_solido_revolucion2(ax, Rhop1, Zp1, sol1, params.ang, global_clim);
 crear_solido_revolucion2(ax, Rhop2, Zp2, sol2, params.ang, global_clim);
 crear_solido_revolucion2(ax, Rhop3, Zp3, sol3, params.ang, global_clim);
-camlight(ax, 'left');
+% camlight(ax, 'left');
+axes(ax);           % Hace que 'ax' sea el eje actual
+camlight('left');   % Ahora camlight act?a sobre el eje actual
 lighting(ax, 'gouraud');
 material(ax, 'dull');
 colorbar(ax);

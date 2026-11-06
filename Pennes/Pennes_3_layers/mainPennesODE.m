@@ -1,4 +1,4 @@
-function alpha = mainPennesODE(varargin)
+function pennes_results = mainPennesODE(varargin)
 % MainPennesODE
 % Octubre 2026
 %
@@ -22,8 +22,9 @@ function alpha = mainPennesODE(varargin)
 %   alpha = mainPennesODE(R, a, rl, filenameQ)
 %   alpha = mainPennesODE(R, a, rl, filenameQ, tf)
 %   alpha = mainPennesODE(R, a, rl, filenameQ, tf, tstop)
-%   alpha = mainPennesODE(R, a, rl, filenameQ, tf, tstop, show_figure)
-%   alpha = mainPennesODE(R, a, rl, filenameQ, tf, tstop, show_figure, theta)
+%   alpha = mainPennesODE(R, a, rl, filenameQ, tf, tstop, output_dir)
+%   alpha = mainPennesODE(R, a, rl, filenameQ, tf, tstop, output_dir, show_figure)
+%   alpha = mainPennesODE(R, a, rl, filenameQ, tf, tstop, output_dir, show_figure, theta)
 %
 % Todos los argumentos son opcionales. Si un argumento no se pasa (o se
 % pasa como []), se usa el valor por defecto o se solicita por teclado,
@@ -35,23 +36,19 @@ function alpha = mainPennesODE(varargin)
 %   R          : (double, escalar, > 0)
 %                Radio de la semiesfera que define el dominio fisico Omega.
 %                Por defecto: R = 0.133 [m].
-%                Si no se pasa, se usa 0.133.
 %
 %   a          : (double, escalar, > 0)
 %                Semiapertura de la lente acustica.
 %                Por defecto: a = 0.01 [m].
-%                Si no se pasa, se usa 0.01.
 %
 %   rl         : (double, escalar, > a)
 %                Radio de curvatura de la lente.
 %                Por defecto: rl = 0.0672 [m].
-%                Si no se pasa, se usa 0.0672.
 %
 %   filenameQ  : (char | string)
 %                Nombre del fichero .mat que contiene la variable XYQ con
-%                los valores del campo de presion acustica Q(x,y). Se busca
-%                en la carpeta ./inputs/. XYQ debe ser una matriz N x 3:
-%                [x, y, Q(x,y)].
+%                los valores del campo de presion acustica Q(x,y). Debe
+%                contener una matriz N x 3: [x, y, Q(x,y)].
 %                Por defecto: se solicita por teclado con input().
 %
 %   tf         : (double, escalar, > 0)
@@ -61,6 +58,12 @@ function alpha = mainPennesODE(varargin)
 %   tstop      : (double, escalar, 0 < tstop < tf)
 %                Instante en el que se detiene la intensidad I_s(t) [s].
 %                Por defecto: se solicita por teclado con input().
+%
+%   output_dir : (char | string | '')
+%                Carpeta donde se guardan las figuras y el fichero
+%                pennes_results.mat. Si se pasa '' (o no se pasa), se usa
+%                la carpeta por defecto ./outputs/a_<a>_rl_<rl>/.
+%                La carpeta se crea si no existe.
 %
 %   show_figure: (logical | 0 | 1)
 %                Bandera para mostrar (1/true) u omitir (0/false) las
@@ -119,14 +122,17 @@ function alpha = mainPennesODE(varargin)
 %   % Usar todos los valores por defecto (pide filenameQ, tf y tstop)
 %   alpha = mainPennesODE();
 %
-%   % Especificar todo salvo theta, sin figuras
-%   alpha = mainPennesODE(0.133, 0.01, 0.0672, 'Q_data.mat', 30, 25, 0);
+%   % Hasta tstop, salida por defecto outputs/a_<a>_rl_<rl>/, sin figuras
+%   alpha = mainPennesODE(0.133, 0.01, 0.0672, 'Q.mat', 30, 25);
 %
-%   % Especificar todo y mostrar figuras con rotacion por defecto
-%   alpha = mainPennesODE(0.133, 0.01, 0.0672, 'Q_data.mat', 30, 25, 1);
+%   % Especificando carpeta de salida, sin figuras
+%   alpha = mainPennesODE(0.133, 0.01, 0.0672, 'Q.mat', 30, 25, 'outputs/caso1');
 %
-%   % Especificar todo, mostrar figuras y rotar 90 grados
-%   alpha = mainPennesODE(0.133, 0.01, 0.0672, 'Q_data.mat', 30, 25, 1, pi/2);
+%   % Con figuras y rotacion por defecto
+%   alpha = mainPennesODE(0.133, 0.01, 0.0672, 'Q.mat', 30, 25, 'outputs/caso1', 1);
+%
+%   % Todo explicito
+%   alpha = mainPennesODE(0.133, 0.01, 0.0672, 'Q.mat', 30, 25, 'outputs/caso1', 1, pi/2);
 %
 % -------------------------------------------------------------------------
 % DEPENDENCIAS (deben estar en ./utils o en el path de MATLAB)
@@ -143,11 +149,12 @@ addpath(genpath('./utils'));
 
 % -------------------------------------------------------------------------
 % Parseo de argumentos
-% Orden esperado (tras el posible axes):
+% Orden esperado:
 %   args{1}=R, args{2}=a, args{3}=rl, args{4}=filenameQ,
-%   args{5}=tf, args{6}=tstop, args{7}=show_figure, args{8}=theta
+%   args{5}=tf, args{6}=tstop, args{7}=output_dir,
+%   args{8}=show_figure, args{9}=theta
 % -------------------------------------------------------------------------
-narginchk(0,8);
+narginchk(0,9);
 args  = varargin;
 nargs = numel(args);
 
@@ -161,17 +168,15 @@ rl = 0.0672;
 if nargs > 2 && ~isempty(args{3}), rl = args{3}; end
 
 if nargs > 3 && ~isempty(args{4})
-    filenameQ = args{4};
-    filename  = sprintf('inputs//%s', filenameQ);
+    filename = args{4};
 else
-    filenameQ = input('diga el nombre del fichero de valores de Q\n','s');
-    filename  = sprintf('inputs//%s', filenameQ);
+    filename = input('diga la ruta completa del fichero de valores de Q\n','s');
 end
 S = load(filename,'XYQ');
 XYQ = S.XYQ;
 
 % -------------------------------------------------------------------------
-% Parametros de tiempo y visualizacion (leer ANTES de usar show_figure)
+% Parametros de tiempo
 % -------------------------------------------------------------------------
 if nargs > 4 && ~isempty(args{5})
     tf = args{5};
@@ -188,9 +193,35 @@ else
     tstop = input('tstop=');
 end
 
-show_figure = 0;
+% -------------------------------------------------------------------------
+% Carpeta de salida (7o argumento). Si vacia -> salida por defecto.
+% -------------------------------------------------------------------------
+outdir_pennes = '';
 if nargs > 6 && ~isempty(args{7})
-    show_figure = args{7};
+    outdir_pennes = args{7};
+end
+
+% -------------------------------------------------------------------------
+% Visualizacion y rotacion (8o y 9o argumentos)
+% -------------------------------------------------------------------------
+show_figure = 0;
+if nargs > 7 && ~isempty(args{8})
+    show_figure = args{8};
+end
+
+theta = 3*pi/2;
+if nargs > 8 && ~isempty(args{9})
+    theta = args{9};
+end
+
+% Directorio efectivo de salida (se usa tanto para .mat como para figuras)
+if isempty(outdir_pennes)
+    outdir_efectivo = fullfile('outputs', sprintf('a_%g_rl_%g', a, rl));
+else
+    outdir_efectivo = outdir_pennes;
+end
+if ~exist(outdir_efectivo,'dir')
+    mkdir(outdir_efectivo);
 end
 
 % -------------------------------------------------------------------------
@@ -206,14 +237,15 @@ z_c = sqrt(rl^2 - a^2);
 z1 = 0.010; z2 = 0.032; z3 = 0.0675;
 zmin = z_c - rl;
 
-[geometry,boundaries,interfaces,boundary_interfaces] = paramCuartCirculoLente(R, a, z_c, rl, show_figure);
+[geometry,boundaries,interfaces,boundary_interfaces] = paramCuartCirculoLente(R, a, z_c, rl, 0);
 
 % -------------------------------------------------------------------------
 % Espacio spline
 % -------------------------------------------------------------------------
 fprintf('------------------------------------------------------------------\n')
 
-n1 = 50;
+% n1 = 50;
+n1 = 10;
 m1=3*n1; n3=4*n1;
 
 [space,msh]=approxspace_multipatch(geometry,boundaries,interfaces,boundary_interfaces,n1,m1,n3);
@@ -230,7 +262,7 @@ fprintf('orden de las matrices=%i\n',Ndof)
 % Construir el aproximante de Shoenberg para las funciones constantes por
 % capas que definen la densidad rho, el calor especifico c_s y la
 % conductividad termica k_s
-[rho_dcoef,c_dcoef,k_dcoef,knots]=ShoenbergparaPennes_lentecurva(50,3,z1,z2,z3,zmin,R,show_figure);
+[rho_dcoef,c_dcoef,k_dcoef,knots]=ShoenbergparaPennes_lentecurva(50,3,z1,z2,z3,zmin,R,0);
 
 %
 % Calcular las matrices IgA de masa y rigidez del espacio de aproximacion multipatch
@@ -255,7 +287,6 @@ K_d = K(free_dofs, drchlt_dofs);
 
 %% Calculo de la condicion inicial
 T_b = 35;
-% T_0 = @(rho,z) T_b;
 alpha_0_inicial = T_b*ones(length(free_dofs),1);
 n_d=length(drchlt_dofs);
 alpha_d = T_b*ones(n_d,1);
@@ -328,17 +359,32 @@ alpha = zeros(Nt, Ndof);
 alpha(:, free_dofs) = alphaI0;
 alpha(:, drchlt_dofs) = T_b;
 
+% -------------------------------------------------------------------------
+% Guardar resultados de Pennes
+% -------------------------------------------------------------------------
+pennes_results = struct();
+pennes_results.alpha            = alpha;
+pennes_results.tiempo           = tiempo;
+pennes_results.R                = R;
+pennes_results.a                = a;
+pennes_results.rl               = rl;
+pennes_results.tf               = tf;
+pennes_results.tstop            = tstop;
+pennes_results.theta            = theta;
+pennes_results.filenameQ_loaded = filename;
+pennes_results.outdir           = outdir_efectivo;
+
+save(fullfile(outdir_efectivo,'pennes_results.mat'), 'pennes_results');
+fprintf('Resultados Pennes guardados en: %s\n', ...
+        fullfile(outdir_efectivo,'pennes_results.mat'));
+
+% -------------------------------------------------------------------------
+% Figuras
+% -------------------------------------------------------------------------
 if show_figure == 1
-    % ---------------------------------------------------------------------
-    % Carpeta de salida: outputs/a_<a>_rl_<rl>/
-    % Nombres de figura fijos dentro de la carpeta (Tz.png, 3D.png, 2D.png)
-    % ---------------------------------------------------------------------
-    outdir = fullfile('outputs', sprintf('a_%g_rl_%g', a, rl));
-    if ~exist(outdir,'dir')
-        mkdir(outdir);
-    end
+    outdir = outdir_efectivo;   % ya creado en el parseo
     fprintf('Figuras se guardaran en: %s\n', outdir);
-    
+
     %% ---- Solucion a lo largo del eje Z ----
     figure(500); clf; grid on; hold on
     npoints = 800;
@@ -374,35 +420,30 @@ if show_figure == 1
     xlabel('Temp.'); ylabel('Z');
     ax = gca; ax.FontSize = 12; ax.FontWeight = 'bold';
     hold off
-    
-    % Guardar figura 500 -> outputs/a_<a>_rl_<rl>/Tz.png
+
     fname500 = fullfile(outdir, 'T_vs_z.fig');
-    exportgraphics(figure(500), fname500, 'Resolution', 300);
+    save_figure(figure(500), outdir, 'T_vs_z.fig');
     fprintf('Guardada: %s\n', fname500);
-    
+
     %% ---- Solucion en todo Omega ----
-    theta = 3*pi/2;
-    if nargs > 7 && ~isempty(args{8})
-        theta = args{8};
-    end
-    
+    % theta ya esta definido arriba (args{9}), no redeclarar.
     figure(602); clf; hold on; grid on
     figure(603); clf; hold on; grid on
-    
+
     npoints=100;
     pts = {linspace(0, 1, npoints), linspace(0, 1, npoints)};
-    
+
     n_patch = space.npatch;
-    
+
     min_value_g = inf;
     max_value_g = 0;
-    
+
     t_eval = 30;
-    [~,j]  = min(abs(tiempo - t_eval));  
+    [~,j]  = min(abs(tiempo - t_eval));
     for patch = 1:n_patch
         [Taprox, F] = sp_eval (alpha(j,space.gnum{patch}), space.sp_patch{patch}, geometry(patch), pts);
         [Rho, Z]  = deal(squeeze(F(1,:,:)), squeeze(F(2,:,:)));
-        
+
         %% Figura 3D con la solucion calculada en un tiempo fijo
         min_value_g = min(min(Taprox(:)), min_value_g);
         max_value_g = max(max(Taprox(:)), max_value_g);
@@ -412,17 +453,17 @@ if show_figure == 1
             ['Temperatura para t = ', num2str(tiempo(j)), 'sec'],...
             z1,z2,z3);
         title(['Superficie rotada para el timepo t=', num2str(tiempo(j)), 'sec']);
-        
+
         %%% Grafico las curvas de los bordes
         hold on
         x_rho = R*sin(0:0.001:pi/2);
         x_z = R*cos(0:0.001:pi/2);
         x_zero = zeros(1,length(x_rho));
-        plot3(x_rho,x_zero,x_z, 'LineStyle', '--', 'LineWidth', 2, 'Color', 'w'); % 
-        plot3(x_zero, -x_rho,x_z, 'LineStyle', '--', 'LineWidth', 2, 'Color', 'w'); % 
+        plot3(x_rho,x_zero,x_z, 'LineStyle', '--', 'LineWidth', 2, 'Color', 'w'); %
+        plot3(x_zero, -x_rho,x_z, 'LineStyle', '--', 'LineWidth', 2, 'Color', 'w'); %
         hold off
         ax = gca;ax.FontSize = 12;ax.FontWeight = 'bold';
-        
+
         %% Figura 2D sobre el Plano XZ
         figure(603), hold on,grid on
         surf(Rho, Z, Taprox,'EdgeColor', 'flat')
@@ -433,7 +474,13 @@ if show_figure == 1
         cb.Limits = [min_value_g, max_value_g];
         xlabel('X'); ylabel('Z');
         hold off
-        
+
     end
+
+    % Guardar figuras 602 y 603 (opcional; antes solo se mostraban)
+    save_figure(figure(602), outdir,'3D.fig');
+    save_figure(figure(603), outdir,'2D.fig');
+    fprintf('Guardadas: %s y %s\n', ...
+            fullfile(outdir,'3D.fig'), fullfile(outdir,'2D.fig'));
 end
 end

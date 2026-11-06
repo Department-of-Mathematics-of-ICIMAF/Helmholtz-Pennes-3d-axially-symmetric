@@ -5,7 +5,8 @@ function cases = load_parameter_sets(input_file)
               'No existe el fichero de parametros: %s', input_file);
     end
 
-    decoded = jsondecode(fileread(input_file));
+%     decoded = jsondecode(fileread(input_file));
+    decoded = json_parse_file(input_file); 
     if iscell(decoded)
         cases = decoded;
     elseif isstruct(decoded)
