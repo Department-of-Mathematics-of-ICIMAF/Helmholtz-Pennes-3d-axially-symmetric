@@ -1,11 +1,13 @@
-function [last_max, preim, XYQ] = mainHelmholtzMultipatch_3Daxial(params, output_dir)
+function [last_max, preim, XYQ, quarter_points] = mainHelmholtzMultipatch_3Daxial(params, output_dir)
 %MAINHELMHOLTZMULTIPATCH_3DAXIAL Resuelve Helmholtz 3D axial con k variable.
-%   [LAST_MAX, PREIM, XYQ] = MAINHELMHOLTZMULTIPATCH_3DAXIAL(PARAMS,
-%   OUTPUT_DIR) ejecuta el modelo por capas y guarda figuras y resultados
-%   intermedios en OUTPUT_DIR.
+%   [LAST_MAX, PREIM, XYQ, QUARTER_POINTS] =
+%   MAINHELMHOLTZMULTIPATCH_3DAXIAL(PARAMS, OUTPUT_DIR) ejecuta el modelo
+%   por capas y guarda figuras y resultados intermedios en OUTPUT_DIR.
 %
 %   LAST_MAX contiene [z_foco, |u|_foco], PREIM las preimagenes de la linea
-%   focal y XYQ la salida de evaluaQ: columnas [X, Y, Q].
+%   focal y XYQ la salida de evaluaQ: columnas [X, Y, Q]. QUARTER_POINTS
+%   contiene los puntos horizontal, vertical superior y vertical inferior
+%   cercanos a |u(0,z_f)|/4, con columnas [rho, z, |u|, parche, xi, eta].
 
 required_fields = {'r', 'a', 'c', 'fr', 'zc', 'C', 'z1', 'z2', 'z3', ...
                    'alpha', 'Q', 'n1', 'm1', 'n3', 'tissue_n', 'tissue_m', ...
@@ -65,5 +67,6 @@ fprintf('Cantidad de grados de libertad: %d\n', space.ndof);
     ccoef, alphacoef, rhocoef, knots, output_dir, params.q_npoints);
 
 % Postprocesamiento y salidas para la posterior integracion con Pennes.
-[last_max, preim] = postprocess_helmholtz(u, space, geometry, params, output_dir);
+[last_max, preim, quarter_points] = ...
+    postprocess_helmholtz(u, space, geometry, params, output_dir);
 end

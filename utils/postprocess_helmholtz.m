@@ -1,5 +1,8 @@
-function [last_max, preim] = postprocess_helmholtz(u, space, geometry, params, output_dir)
+function [last_max, preim, quarter_points] = postprocess_helmholtz(u, space, geometry, params, output_dir)
 %POSTPROCESS_HELMHOLTZ Postprocesa la solucion y guarda todas las figuras.
+%   QUARTER_POINTS contiene, por filas, los puntos horizontal, vertical
+%   superior y vertical inferior cercanos a |u(0,z_f)|/4. Sus columnas son
+%   [rho, z, |u|, numero_de_parche, xi, eta].
 
 fprintf('Postprocesamiento grafico\n')
 
@@ -92,6 +95,14 @@ save_figure(fig700, output_dir, 'focal_real');
 save_figure(fig800, output_dir, 'focal_imag');
 save_figure(fig900, output_dir, 'focal_abs');
 
+% Primeros puntos cercanos al cuarto de la presion focal en tres direcciones.
+[horizontal, vertical_up, vertical_down] = ...
+    quarter_pressure_points(z_f, preim, u, space, geometry, ...
+                            params.npoints_axis);
+quarter_points = [horizontal; vertical_up; vertical_down];
+horizontal_semi_axis = abs(horizontal(1));
+vertical_semi_axis = mean(abs([vertical_up(2), vertical_down(2)]-z_f));
+
 % Solido de revolucion con una escala de color global.
 pts_surface = linspace(0, 1, params.npoints_surface);
 pts = {pts_surface, pts_surface};
@@ -110,6 +121,28 @@ sol2 = abs(up2);
 sol3 = abs(up3);
 global_clim = [min([sol1(:); sol2(:); sol3(:)]), ...
                max([sol1(:); sol2(:); sol3(:)])];
+
+% Solucion 2D original y duplicado con la semi-elipse y los tres puntos.
+rho_data = {Rhop1, Rhop2, Rhop3};
+z_data = {Zp1, Zp2, Zp3};
+sol_data = {sol1, sol2, sol3};
+fig_2d = solution_2d_figure(rho_data, z_data, sol_data, global_clim, ...
+    'Valor absoluto de la solucion de Helmholtz en 2D');
+save_figure(fig_2d, output_dir, 'solution_2d');
+
+[fig_ellipse, ax_ellipse] = solution_2d_figure(rho_data, z_data, sol_data, ...
+    global_clim, 'Solucion 2D y semi-elipse a |u(0,z_f)|/4');
+hold(ax_ellipse, 'on');
+theta = linspace(-pi/2, pi/2, 400);
+ellipse_rho = horizontal_semi_axis*cos(theta);
+ellipse_z = z_f + vertical_semi_axis*sin(theta);
+ellipse_handle = plot(ax_ellipse, ellipse_rho, ellipse_z, 'm-', ...
+                      'LineWidth', 2);
+points_handle = plot(ax_ellipse, quarter_points(:,1), quarter_points(:,2), ...
+                     'ro', 'MarkerSize', 9, 'LineWidth', 2);
+legend(ax_ellipse, [ellipse_handle, points_handle], ...
+       {'Semi-elipse', 'Puntos cercanos a |u_f|/4'}, 'Location', 'best');
+save_figure(fig_ellipse, output_dir, 'solution_2d_quarter_ellipse');
 
 fig_surface = figure();
 ax = axes('Parent', fig_surface);
@@ -130,4 +163,27 @@ lighting(ax, 'gouraud');
 material(ax, 'dull');
 colorbar(ax);
 save_figure(fig_surface, output_dir, 'solution_revolution');
+end
+
+function [fig, ax] = solution_2d_figure(rho_data, z_data, sol_data, ...
+                                        global_clim, plot_title)
+%SOLUTION_2D_FIGURE Crea la misma vista 2D para ambas figuras guardadas.
+    fig = figure();
+    ax = axes('Parent', fig);
+    hold(ax, 'on');
+    for iptc = 1:numel(rho_data)
+        surf(ax, rho_data{iptc}, z_data{iptc}, sol_data{iptc}, ...
+             'EdgeColor', 'none', 'FaceColor', 'interp');
+    end
+    view(ax, 2);
+    axis(ax, 'equal');
+    axis(ax, 'tight');
+    grid(ax, 'on');
+    xlabel(ax, '\rho');
+    ylabel(ax, 'z');
+    title(ax, plot_title);
+    if global_clim(2) > global_clim(1)
+        caxis(ax, global_clim);
+    end
+    colorbar(ax);
 end
