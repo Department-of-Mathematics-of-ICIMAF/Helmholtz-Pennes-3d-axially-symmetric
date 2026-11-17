@@ -38,22 +38,29 @@ function results = run_helmholtz_cases(model_type, input_file)
                 i, numel(cases), model_type, output_dir);
 
         try
-            [last_max, preim, XYQ] = ...
+            [last_max, preim, XYQ, quarter_points] = ...
                 mainHelmholtzMultipatch_3Daxial(params, output_dir);
         catch exception
             close(findall(0, 'Type', 'figure'));
             rethrow(exception);
         end
 
+        % Valores derivados disponibles para Pennes en params y en results.
+        params.quarter_points = quarter_points;
+        horizontal_semi_axis = abs(quarter_points(1,1));
+        vertical_semi_axis = mean(abs(quarter_points(2:3,2)-last_max(1)));
+        params.quarter_semi_axes = [horizontal_semi_axis, vertical_semi_axis];
+        write_parameter_summary(output_dir, params, metadata, model_type);
+
         save(fullfile(output_dir, 'helmholtz_results.mat'), ...
-             'last_max', 'preim', 'XYQ', 'params');
+             'last_max', 'preim', 'XYQ', 'quarter_points', 'params');
         result = struct('last_max', last_max, 'preim', preim, 'XYQ', XYQ, ...
-                        'params', params, 'metadata', metadata, ...
-                        'output_dir', output_dir);
+                        'quarter_points', quarter_points, 'params', params, ...
+                        'metadata', metadata, 'output_dir', output_dir);
         results{i} = result;
 
-        % Punto de integracion para Pennes: consumir aqui last_max, preim
-        % y XYQ (o results{i}) cuando se implemente la segunda etapa.
+        % Punto de integracion para Pennes: consumir aqui last_max, preim,
+        % XYQ y quarter_points (o results{i}) al implementar la segunda etapa.
         fprintf('Corrida finalizada. Resultados: %s\n', ...
                 fullfile(output_dir, 'helmholtz_results.mat'));
     end

@@ -27,9 +27,12 @@ Cada archivo de entrada contiene un arreglo JSON. Para ejecutar varios casos, ba
 - `last_max`: posición y magnitud del último máximo local.
 - `preim`: preimágenes de la línea focal.
 - `XYQ`: salida de `evaluaQ`, con columnas `[X, Y, Q]`.
+- `quarter_points`: puntos horizontal, vertical superior y vertical inferior cercanos a `|u(0,z_f)|/4`.
 - `params`, `metadata` y `output_dir`: parámetros y ubicación de la corrida.
 
-Estas salidas quedan disponibles para la posterior integración con Pennes. Los valores originales de los `main` están incluidos en los JSON; `rl` y `zmin` se calculan a partir de la geometría.
+Las filas de `quarter_points` siguen el orden horizontal, vertical superior y vertical inferior. Sus columnas son `[rho, z, |u|, parche, xi, eta]`. La estructura `params` incluye esa misma matriz en `params.quarter_points` y los semiejes de la elipse en `params.quarter_semi_axes`. El semieje vertical es la distancia media entre `z_f` y los dos puntos verticales. Estas salidas quedan disponibles para la posterior integración con Pennes.
+
+Los valores originales de los `main` están incluidos en los JSON; `rl` y `zmin` se calculan a partir de la geometría.
 
 ### Presets de tejido para k constante
 
@@ -44,10 +47,12 @@ Cada ejecución crea una subcarpeta independiente en:
 
 El nombre combina índice, identificador del caso y refinamiento `n1`; una repetición añade un sufijo para no sobrescribir resultados. Dentro de cada subcarpeta se guardan:
 
-- `parametros.txt`: resumen completo de parámetros.
-- `helmholtz_results.mat`: `last_max`, `preim`, `XYQ` y `params`.
+- `parametros.txt`: resumen completo de parámetros, incluidos los puntos al cuarto de presión y los semiejes calculados.
+- `helmholtz_results.mat`: `last_max`, `preim`, `XYQ`, `quarter_points` y `params`.
 - `Q_values.mat`: valores de `XYQ`.
-- Todas las figuras de la cadena de ejecución, en formatos `.fig` y `.png`. Las figuras se cierran después de guardarse.
+- `solution_2d.fig/.png`: valor absoluto de la solución en el plano `(rho,z)`.
+- `solution_2d_quarter_ellipse.fig/.png`: duplicado de la figura 2D con la semi-elipse y los tres puntos destacados.
+- Todas las demás figuras de la cadena de ejecución, en formatos `.fig` y `.png`. Las figuras se cierran después de guardarse.
 
 ## Requisitos
 
