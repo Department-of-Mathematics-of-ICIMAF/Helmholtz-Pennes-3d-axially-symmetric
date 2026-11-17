@@ -54,6 +54,25 @@ El nombre combina índice, identificador del caso y refinamiento `n1`; una repet
 - `solution_2d_quarter_ellipse.fig/.png`: duplicado de la figura 2D con la semi-elipse y los tres puntos destacados.
 - Todas las demás figuras de la cadena de ejecución, en formatos `.fig` y `.png`. Las figuras se cierran después de guardarse.
 
+## Reutilización con otra solución IgA, incluida Pennes
+
+`utils/quarter_pressure_points.m` es independiente del modelo físico. Solo requiere un vector de coeficientes, su espacio multiparche y su geometría, todos compatibles con `sp_eval`. No utiliza variables globales ni funciones internas de Helmholtz o Pennes.
+
+Para una solución temporal de Pennes se debe seleccionar **un instante** mediante `alpha(j,:)`; no se debe pasar la matriz temporal completa. Si se pasa `preim = []`, la función calcula las preimágenes con la misma geometría recibida, por lo que no depende de una parametrización de Helmholtz:
+
+```matlab
+% Desde la raiz del repositorio, con space, geometry y alpha ya calculados.
+addpath(fullfile(pwd, 'utils'));
+j = 1; % Indice del instante que se desea evaluar.
+[h, vertical_up, vertical_down] = quarter_pressure_points( ...
+    z_f, [], alpha(j,:), space, geometry, 800, 1000);
+quarter_points_pennes = [h; vertical_up; vertical_down];
+```
+
+La operación siempre se aplica al **valor absoluto del campo recibido**. En Pennes, si se pasa directamente `alpha(j,:)`, el objetivo es `abs(T(0,z_f))/4`. La selección de un campo derivado, como un incremento de temperatura, debe hacerse antes de llamar a la función y estar representado por sus propios coeficientes IgA.
+
+La utilidad `utils/preimagen_linea_focal.m` también es independiente del modelo: invierte únicamente los mapas NURBS de `geometry` y no usa el espacio ni la solución.
+
 ## Requisitos
 
 MATLAB, las dependencias NURBS/GeoPDEs utilizadas por el proyecto y el Spline Toolbox deben estar disponibles en el `path`, igual que en la ejecución original de los `main`.

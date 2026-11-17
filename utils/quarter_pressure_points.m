@@ -1,25 +1,57 @@
 function [horizontal, vertical_up, vertical_down] = ...
-    quarter_pressure_points(z_f, preim, u, space, geometry, npoints_axis)
-%QUARTER_PRESSURE_POINTS Busca los primeros puntos cercanos a |u_f|/4.
+    quarter_pressure_points(z_f, preim, u, space, geometry, npoints_axis, npoints_focal)
+%QUARTER_PRESSURE_POINTS Primeros puntos cercanos a |campo(0,z_f)|/4.
 %   [HORIZONTAL, VERTICAL_UP, VERTICAL_DOWN] =
-%   QUARTER_PRESSURE_POINTS(Z_F, PREIM, U, SPACE, GEOMETRY, NPOINTS_AXIS)
-%   evalua la solucion sobre la linea focal y sobre el eje de simetria.
+%   QUARTER_PRESSURE_POINTS(Z_F, PREIM, U, SPACE, GEOMETRY, NPOINTS_AXIS,
+%   NPOINTS_FOCAL) evalua cualquier campo escalar IgA representado por un
+%   vector de coeficientes U, un espacio multiparche SPACE y GEOMETRY.
+%   El nombre se conserva por compatibilidad, pero la funcion no depende
+%   de Helmholtz ni de Pennes y no utiliza ninguna variable global.
 %
-%   En cada direccion se parte del foco y se toma el primer par de muestras
-%   consecutivas cuyos valores de |u| encierran |u(0,z_f)|/4. De esos dos
-%   extremos se devuelve el mas cercano al valor objetivo. La busqueda
-%   horizontal recorre PREIM hacia rho creciente; las busquedas verticales
-%   usan puntos parametricos (0,eta) y recorren z creciente o decreciente.
+%   PREIM puede ser [] o omitirse conceptualmente pasando []. En ese caso
+%   se calcula con PREIMAGEN_LINEA_FOCAL usando la GEOMETRY recibida. Esto
+%   permite reutilizar la funcion con otro modelo sin importar preimagenes
+%   calculadas sobre una parametrizacion distinta. Si PREIM se proporciona,
+%   debe corresponder a esa misma GEOMETRY y tener un elemento por parche.
+%
+%   U debe ser un vector fila o columna con los coeficientes de una unica
+%   solucion. Para una solucion temporal de Pennes, usar alpha(j,:), no la
+%   matriz alpha completa. No se requiere transponer ese vector fila.
+%
+%   En cada direccion se parte de (0,z_f) y se toma el primer par de
+%   muestras consecutivas cuyos valores absolutos encierran el valor focal
+%   absoluto dividido por 4. De esos dos extremos se devuelve el mas cercano
+%   al objetivo. La busqueda horizontal recorre PREIM hacia rho creciente;
+%   las verticales usan puntos parametricos (0,eta) y recorren z creciente
+%   o decreciente. NPOINTS_AXIS y NPOINTS_FOCAL son opcionales (1000).
 %
 %   Cada salida es un vector fila con columnas:
-%       [rho, z, |u|, numero_de_parche, xi, eta].
+%       [rho, z, |campo|, numero_de_parche, xi, eta].
+%
+%   Ejemplo generico con una solucion temporal de Pennes:
+%       [h, vu, vd] = quarter_pressure_points( ...
+%           z_f, [], alpha(j,:), space, geometry, 800, 1000);
 
     if nargin < 6 || isempty(npoints_axis)
         npoints_axis = 1000;
     end
-    if npoints_axis < 2
+    if nargin < 7 || isempty(npoints_focal)
+        npoints_focal = 1000;
+    end
+    if npoints_axis < 2 || npoints_focal < 2
         error('quarter_pressure_points:InvalidSampling', ...
-              'npoints_axis debe ser al menos 2.');
+              'npoints_axis y npoints_focal deben ser al menos 2.');
+    end
+    if ~isvector(u)
+        error('quarter_pressure_points:InvalidCoefficients', ...
+              ['U debe contener una unica solucion. Para Pennes use ' ...
+               'alpha(j,:) en el instante j, no la matriz alpha completa.']);
+    end
+    if isempty(preim)
+        preim = preimagen_linea_focal(geometry, z_f, npoints_focal);
+    elseif numel(preim) ~= numel(geometry)
+        error('quarter_pressure_points:InvalidPreimages', ...
+              'PREIM debe tener un elemento por cada parche de GEOMETRY.');
     end
 
     % Evaluacion sobre las preimagenes de la linea horizontal z = z_f.
@@ -68,14 +100,14 @@ function [horizontal, vertical_up, vertical_down] = ...
                             abs(h_z-z_f) <= line_tol);
     if isempty(focal_candidates)
         error('quarter_pressure_points:MissingFocus', ...
-              'No se encontro la preimagen del foco (0,z_f).');
+              'No se encontro la preimagen del punto (0,z_f).');
     end
     [~, focal_local] = min(abs(h_rho(focal_candidates)));
     focal_index = focal_candidates(focal_local);
     focal_abs_u = h_abs(focal_index);
     if ~isfinite(focal_abs_u) || focal_abs_u <= 0
         error('quarter_pressure_points:InvalidFocusValue', ...
-              'El valor absoluto de la presion focal debe ser positivo.');
+              'El valor absoluto del campo en (0,z_f) debe ser positivo.');
     end
     target = focal_abs_u/4;
 
@@ -136,7 +168,7 @@ function [horizontal, vertical_up, vertical_down] = ...
                              'vertical superior');
     if selected == 1
         error('quarter_pressure_points:UnexpectedFocusBracket', ...
-              'El foco no puede ser el punto vertical superior.');
+              'El punto (0,z_f) no puede ser el punto vertical superior.');
     end
     index = upward(selected-1);
     vertical_up = [v_rho(index), v_z(index), v_abs(index), ...
@@ -148,18 +180,18 @@ function [horizontal, vertical_up, vertical_down] = ...
                              'vertical inferior');
     if selected == 1
         error('quarter_pressure_points:UnexpectedFocusBracket', ...
-              'El foco no puede ser el punto vertical inferior.');
+              'El punto (0,z_f) no puede ser el punto vertical inferior.');
     end
     index = downward(selected-1);
     vertical_down = [v_rho(index), v_z(index), v_abs(index), ...
                      v_patch(index), v_xi(index), v_eta(index)];
 
-    fprintf('Puntos cercanos a |u(0,z_f)|/4 (objetivo %.16e):\n', target);
-    fprintf('  Horizontal: rho=%.16e, z=%.16e, |u|=%.16e\n', ...
+    fprintf('Puntos cercanos a |campo(0,z_f)|/4 (objetivo %.16e):\n', target);
+    fprintf('  Horizontal: rho=%.16e, z=%.16e, |campo|=%.16e\n', ...
             horizontal(1), horizontal(2), horizontal(3));
-    fprintf('  Vertical superior: rho=%.16e, z=%.16e, |u|=%.16e\n', ...
+    fprintf('  Vertical superior: rho=%.16e, z=%.16e, |campo|=%.16e\n', ...
             vertical_up(1), vertical_up(2), vertical_up(3));
-    fprintf('  Vertical inferior: rho=%.16e, z=%.16e, |u|=%.16e\n', ...
+    fprintf('  Vertical inferior: rho=%.16e, z=%.16e, |campo|=%.16e\n', ...
             vertical_down(1), vertical_down(2), vertical_down(3));
 end
 
